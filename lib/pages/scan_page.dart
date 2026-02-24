@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'result_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -11,6 +14,25 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage> {
   bool _isAnalyzing = false;
+
+  //Image File
+  File? image;
+
+  //Image picker
+  final picker = ImagePicker();
+
+  //Pick Image Method
+  Future<void> pickImage(ImageSource source) async {
+    // Pick rom camera or gallery
+    final pickedFile = await picker .pickImage(source: source);
+
+    //Updated selected image
+    if (pickedFile != null) {
+      setState(() {
+        image = File (pickedFile.path);
+      });
+    }
+  }
 
   static const lightBlue = Color(0xDFAAD4F6);
   static const darkBlue = Color(0xFF144AB5);
@@ -23,6 +45,8 @@ class _ScanPageState extends State<ScanPage> {
 
     setState(() => _isAnalyzing = false);
 
+
+    // To remove later when implementing model
     final results = [
       {'name': 'Healthy', 'color': Colors.green},
       {'name': 'Blister / Corn & Callus', 'color': Colors.amber},
@@ -59,9 +83,16 @@ class _ScanPageState extends State<ScanPage> {
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
               ),
-            ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
           ),
-
+        ],
+      ),
       body: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -87,38 +118,43 @@ class _ScanPageState extends State<ScanPage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey[300]!),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                //children: const [
-
-
-                children: [
-                  Image.asset(
-                    'assets/images/foot_image.png',
-                    width: 140,
-                    height: 140,
-                    fit: BoxFit.contain,
-                  ),
-
-
-                  //Icon(Icons.image_outlined, size: 90, color: Colors.grey),
-                  SizedBox(height: 8),
-                  Text(
-                    'No image selected',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: image == null
+                    ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/foot_image.png',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'No image selected',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                )
+                    : Image.file(
+                  image!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
               ),
             ),
 
             const SizedBox(height: 25),
 
             // Camera & Gallery buttons (light blue)
+
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => pickImage(ImageSource.camera),
                     icon: const Icon(Icons.photo_camera_outlined),
                     label: const Text('Camera'),
                     style: ElevatedButton.styleFrom(
@@ -134,7 +170,7 @@ class _ScanPageState extends State<ScanPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => pickImage(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined),
                     label: const Text('Gallery'),
                     style: ElevatedButton.styleFrom(
@@ -164,7 +200,7 @@ class _ScanPageState extends State<ScanPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: _isAnalyzing ? null : _analyzeImage,
+                onPressed: (_isAnalyzing || image == null) ? null : _analyzeImage,
                 child: _isAnalyzing
                     ? const SizedBox(
                   height: 20,

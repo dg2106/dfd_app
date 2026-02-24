@@ -90,7 +90,7 @@ class _UnderlineFieldState extends State<UnderlineField> {
 /// Gradient button
 class GradientButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const GradientButton({
     super.key,

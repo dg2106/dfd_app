@@ -1,48 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/auth_widgets.dart';
-import 'signup_page.dart';
-import 'forgot_page.dart';
 
-class LogInPage extends StatefulWidget {
-  const LogInPage({super.key});
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
   @override
-  State<LogInPage> createState() => _LogInPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _LogInPageState extends State<LogInPage>
+class _SignupPageState extends State<SignupPage>
     with SingleTickerProviderStateMixin {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-
-  bool _loading = false;
-  String? _error;
-
-  Future<void> _signIn() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text.trim(),
-      );
-
-    } catch (_) {
-      setState(() {
-        _error = 'Email or password is invalid';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-
   final _emailFocus = FocusNode();
   final _passFocus = FocusNode();
 
@@ -74,6 +44,32 @@ class _LogInPageState extends State<LogInPage>
     _passFocus.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  bool _loading = false;
+  String? _error;
+
+  Future<void> _signUp() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text.trim(),
+      );
+
+      // Wrapper will automatically go to MainNavigation
+      if (mounted) Navigator.pop(context);
+    } on FirebaseAuthException catch (_) {
+      setState(() {
+        _error = 'Email or password is invalid or you are already signed in.';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -157,7 +153,7 @@ class _LogInPageState extends State<LogInPage>
                         const SizedBox(height: 16),
 
                         const Text(
-                          'Log In',
+                          'Sign Up',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
@@ -193,61 +189,18 @@ class _LogInPageState extends State<LogInPage>
                                 ? Icons.visibility_off
                                 : Icons.visibility),
                           ),
-                          onSubmitted: (_) => _signIn(),
+                          onSubmitted: (_) => _signUp (),
                         ),
 
                         const SizedBox(height: 26),
-
                         if (_error != null) ...[
                           Text(_error!, style: const TextStyle(color: Colors.red)),
                           const SizedBox(height: 12),
                         ],
 
                         GradientButton(
-                          text: _loading ? 'Logging in...' : 'Log In',
-                          onPressed: _loading ? null : () =>_signIn(),
-                        ),
-
-
-                        const SizedBox(height: 16),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const ForgotPage()),
-                                );
-                              },
-                              child: const Text(
-                                'Forgot Password?',
-                                style:
-                                TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text("Don't have an account? "),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const SignupPage()),
-                                );
-                              },
-                              child: const Text(
-                                'Sign up',
-                                style:
-                                TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
+                          text: _loading ? 'Creating account...' : 'Sign Up',
+                          onPressed: _loading ? null : () => _signUp(),
                         ),
                       ],
                     ),

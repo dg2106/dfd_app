@@ -1,79 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/auth_widgets.dart';
-import 'signup_page.dart';
-import 'forgot_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LogInPage extends StatefulWidget {
-  const LogInPage({super.key});
+class ForgotPage extends StatefulWidget {
+  const ForgotPage({super.key});
 
   @override
-  State<LogInPage> createState() => _LogInPageState();
+  State<ForgotPage> createState() => _ForgotPageState();
 }
 
-class _LogInPageState extends State<LogInPage>
+class _ForgotPageState extends State<ForgotPage>
     with SingleTickerProviderStateMixin {
   final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-
-  bool _loading = false;
-  String? _error;
-
-  Future<void> _signIn() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text.trim(),
-      );
-
-    } catch (_) {
-      setState(() {
-        _error = 'Email or password is invalid';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-
   final _emailFocus = FocusNode();
-  final _passFocus = FocusNode();
 
-  bool _obscure = true;
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    // Animation for interactive app name
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
     _scaleAnimation =
         CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
-
     _controller.forward();
   }
 
   @override
   void dispose() {
     _emailCtrl.dispose();
-    _passCtrl.dispose();
     _emailFocus.dispose();
-    _passFocus.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailCtrl.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset link sent to your email'),
+        ),
+      );
+
+    } on FirebaseAuthException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email'),
+        ),
+      );
+    }
   }
 
   @override
@@ -103,8 +87,8 @@ class _LogInPageState extends State<LogInPage>
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 30),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3F3F3),
                       borderRadius: BorderRadius.circular(22),
@@ -145,7 +129,7 @@ class _LogInPageState extends State<LogInPage>
                         const SizedBox(height: 8),
 
                         const Text(
-                          'Detect early signs of diabetic foot complications',
+                          'Recover access to your account',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -157,7 +141,7 @@ class _LogInPageState extends State<LogInPage>
                         const SizedBox(height: 16),
 
                         const Text(
-                          'Log In',
+                          'Forgot Password',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
@@ -166,7 +150,18 @@ class _LogInPageState extends State<LogInPage>
                           ),
                         ),
 
-                        const SizedBox(height: 34),
+                        const SizedBox(height: 14),
+
+                        const Text(
+                          'Enter your email and we’ll send a password reset link.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
 
                         UnderlineField(
                           controller: _emailCtrl,
@@ -174,80 +169,34 @@ class _LogInPageState extends State<LogInPage>
                           hint: 'Email',
                           icon: Icons.mail_outline,
                           keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _passFocus.requestFocus(),
-                        ),
-                        const SizedBox(height: 22),
-
-                        UnderlineField(
-                          controller: _passCtrl,
-                          focusNode: _passFocus,
-                          hint: 'Password',
-                          icon: Icons.lock_outline,
-                          obscureText: _obscure,
                           textInputAction: TextInputAction.done,
-                          suffix: IconButton(
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                            icon: Icon(_obscure
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                          ),
-                          onSubmitted: (_) => _signIn(),
+                          onSubmitted: (_) => _resetPassword(),
                         ),
 
                         const SizedBox(height: 26),
 
-                        if (_error != null) ...[
-                          Text(_error!, style: const TextStyle(color: Colors.red)),
-                          const SizedBox(height: 12),
-                        ],
-
                         GradientButton(
-                          text: _loading ? 'Logging in...' : 'Log In',
-                          onPressed: _loading ? null : () =>_signIn(),
+                          text: 'Send Reset Link',
+                          onPressed: _resetPassword,
                         ),
 
+                        const SizedBox(height: 14),
 
-                        const SizedBox(height: 16),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const ForgotPage()),
-                                );
-                              },
-                              child: const Text(
-                                'Forgot Password?',
-                                style:
-                                TextStyle(fontWeight: FontWeight.w700),
-                              ),
+                        OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
-                        ),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text("Don't have an account? "),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const SignupPage()),
-                                );
-                              },
-                              child: const Text(
-                                'Sign up',
-                                style:
-                                TextStyle(fontWeight: FontWeight.w700),
-                              ),
+                          ),
+                          child: const Text(
+                            'Back to Login',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
