@@ -1,0 +1,5 @@
+blister
+corn_and_callus
+gangrene
+healthy
+ulcer

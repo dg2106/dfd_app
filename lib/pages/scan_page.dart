@@ -1,9 +1,12 @@
-import 'dart:math';
 import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'result_page.dart';
+
+import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -21,6 +24,9 @@ class _ScanPageState extends State<ScanPage> {
   //Image picker
   final picker = ImagePicker();
 
+  //Laptop IP
+  static const String apiUrl= 'http://192.168.100.89:8000/predict';
+
   //Pick Image Method
   Future<void> pickImage(ImageSource source) async {
     // Pick rom camera or gallery
@@ -37,37 +43,90 @@ class _ScanPageState extends State<ScanPage> {
   static const lightBlue = Color(0xDFAAD4F6);
   static const darkBlue = Color(0xFF144AB5);
 
+  // Map raw label from API to UI display name and color
+  _LabelUI _mapLabelToUI(String raw) {
+    final l = raw.toLowerCase();
+
+    if (l.contains('healthy')) return _LabelUI('Healthy', Colors.green);
+    if (l.contains('blister')) return _LabelUI('Blister', Colors.amber);
+    if (l.contains('corn') || l.contains('callus')) {
+      return _LabelUI('Corn & Callus', Colors.amber);
+    }
+    if (l.contains('ulcer')) return _LabelUI('Ulcer', Colors.orange);
+    if (l.contains('gangrene')) return _LabelUI('Gangrene', Colors.red);
+
+    return _LabelUI(raw, Colors.grey);
+  }
+
+
   Future<void> _analyzeImage() async {
+    if (image == null) return;
+
     setState(() => _isAnalyzing = true);
 
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    try {
+      final uri = Uri.parse(apiUrl);
 
-    setState(() => _isAnalyzing = false);
+      final request = http.MultipartRequest('POST', uri);
+      request.files.add(await http.MultipartFile.fromPath('file', image!.path));
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Server error ${response.statusCode}: ${response.body}');
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      final rawLabel = data['label'].toString();
+      final confidence = (data['confidence'] as num?)?.toDouble() ?? 0.0;
+
+      final mapped = _mapLabelToUI(rawLabel);
+
+      if (!mounted) return;
+      setState(() => _isAnalyzing = false);
+
+      // Optional safety threshold (recommended)
+      const double threshold = 0.65;
+      if (confidence < threshold) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ResultPage(
+              disease: 'Uncertain (Retake photo / Crop closer)',
+              confidence: confidence,
+              color: Colors.blueGrey,
+            ),
+          ),
+        );
+        return;
+      }
 
 
-    // To remove later when implementing model
-    final results = [
-      {'name': 'Healthy', 'color': Colors.green},
-      {'name': 'Blister / Corn & Callus', 'color': Colors.amber},
-      {'name': 'Ulcer', 'color': Colors.orange},
-      {'name': 'Gangrene', 'color': Colors.red},
-    ];
-
-    final mockResult = results[Random().nextInt(results.length)];
-    final confidence = 70 + Random().nextInt(29);
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ResultPage(
-          disease: mockResult['name'] as String,
-          confidence: confidence.toDouble(),
-          color: mockResult['color'] as Color,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ResultPage(
+                disease: mapped.displayName,
+                confidence: confidence,
+                color: mapped.color,
+              ),
         ),
-      ),
-    );
+      );
+    } catch (e){
+      if(!mounted) return;
+      setState(() => _isAnalyzing = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Prediction failed: $e')),
+      );
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -203,17 +262,17 @@ class _ScanPageState extends State<ScanPage> {
                 onPressed: (_isAnalyzing || image == null) ? null : _analyzeImage,
                 child: _isAnalyzing
                     ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                     : const Text(
-                  'Analyze Image',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
+                      'Analyze Image',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -248,4 +307,10 @@ class _ScanPageState extends State<ScanPage> {
       ),
     );
   }
+}
+
+class _LabelUI {
+  final String displayName;
+  final Color color;
+  _LabelUI(this.displayName, this.color);
 }
