@@ -1,5 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'result_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
+// Displays previous scan results stored in Firebase Firestore
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
 
@@ -9,20 +15,19 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final List<HistoryItem> items = [
-      HistoryItem(
-        disease: 'Healthy',
-        confidencePercent: 98.0,
-        dateText: 'Feb 17, 2026 • 10:12',
-        color: Colors.green,
-      ),
-      HistoryItem(
-        disease: 'Ulcer',
-        confidencePercent: 85.0,
-        dateText: 'Feb 10, 2026 • 15:40',
-        color: Colors.orange,
-      ),
-    ];
+    // Currently logged-in user
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(body: Center(child: Text("Not logged in")));
+    }
+
+    // History data from Firestore
+    final historyStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('history')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -34,48 +39,101 @@ class HistoryPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: items.isEmpty
-          ? _EmptyHistory(
-        onStartScan: () {
-          // If you want: Navigate to Scan tab later.
-          Navigator.pop(context);
-        },
-      )
-          : ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return _HistoryCard(
-            item: item,
-            onTap: () {
-              // Later you can open a "History Details" page
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Open details (UI only): ${item.disease}')),
-              );
-            },
+      body: StreamBuilder(
+        stream: historyStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return _EmptyHistory(onStartScan: () => Navigator.pop(context));
+          }
+
+          final items = docs.map((doc) {
+            final data = doc.data();
+            final disease = (data['disease'] ?? 'Unknown').toString();
+            final confidence = (data['confidence'] as num?)?.toDouble() ?? 0.0;
+            final localPath = data['localImagePath']?.toString();
+
+            final percent = (confidence <= 1.0 ? confidence * 100 : confidence)
+                .clamp(0, 100)
+                .toDouble();
+
+            String formattedDate = (data['dateText'] ?? '').toString();
+
+            if (formattedDate.isEmpty) {
+              final timestamp = data['createdAt'] as Timestamp?;
+              if (timestamp != null) {
+                final date = timestamp.toDate();
+                formattedDate =
+                    DateFormat('MMM d, yyyy • HH:mm').format(date);
+              }
+            }
+
+            return HistoryItem(
+              disease: disease,
+              confidencePercent: percent,
+              dateText: formattedDate,
+              color: _diseaseColor(disease),
+              localImagePath: localPath,
+            );
+          }).toList();
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) => _HistoryCard(
+              item: items[index],
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ResultPage(
+                      disease: items[index].disease,
+                      confidence: items[index].confidencePercent / 100,
+                      color: _diseaseColor(items[index].disease),
+                    ),
+                  ),
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
-}
 
+  Color _diseaseColor(String disease) {
+    final d = disease.toLowerCase();
+    if (d.contains('healthy')) return Colors.green;
+    if (d.contains('blister') || d.contains('corn') || d.contains('callus')) return Colors.amber;
+    if (d.contains('ulcer')) return Colors.orange;
+    if (d.contains('gangrene')) return Colors.red;
+    return Colors.grey;
+  }
+
+}
 
 class HistoryItem {
   final String disease;
-  final double confidencePercent; // e.g., 85.0
-  final String dateText; // keep as string for now; later use DateTime
+  final double confidencePercent;
+  final String dateText;
   final Color color;
-  final String? imageUrl; // for Firebase Storage later (optional)
+  final String? localImagePath;
 
   HistoryItem({
     required this.disease,
     required this.confidencePercent,
     required this.dateText,
     required this.color,
-    this.imageUrl,
+    this.localImagePath,
   });
 }
 
@@ -129,7 +187,7 @@ class _HistoryCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   children: [
-                    // Thumbnail placeholder (Firebase: swap to Image.network(item.imageUrl))
+                    // Thumbnail placeholder
                     Container(
                       width: 54,
                       height: 54,
@@ -138,7 +196,13 @@ class _HistoryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: const Icon(Icons.image_outlined, color: Colors.grey),
+                      clipBehavior: Clip.antiAlias,
+                      child: item.localImagePath  == null
+                          ? const Icon(Icons.image_outlined, color: Colors.grey)
+                          : Image.file(
+                              File(item.localImagePath!),
+                              fit: BoxFit.cover,
+                      ),
                     ),
 
                     const SizedBox(width: 12),
@@ -190,7 +254,6 @@ class _HistoryCard extends StatelessWidget {
                     const SizedBox(width: 8),
 
                     // Trailing chevron
-                    const Icon(Icons.chevron_right, color: darkBlue),
                   ],
                 ),
               ),
@@ -239,15 +302,23 @@ class _EmptyHistory extends StatelessWidget {
               style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: darkBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: lightBlue.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
               ),
-              onPressed: onStartScan,
-              child: const Text('Start a Scan', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text(
+                'Use the Scan tab below to start scanning.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
             ),
           ],
         ),

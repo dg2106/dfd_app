@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// Display educational tips for foot care
 class HealthTipsPage extends StatelessWidget {
   const HealthTipsPage({super.key});
 

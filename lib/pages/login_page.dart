@@ -4,6 +4,7 @@ import '../widgets/auth_widgets.dart';
 import 'signup_page.dart';
 import 'forgot_page.dart';
 
+// User is able to log in the application using Firebase Authentication
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
 
@@ -13,8 +14,12 @@ class LogInPage extends StatefulWidget {
 
 class _LogInPageState extends State<LogInPage>
     with SingleTickerProviderStateMixin {
+  // Controllers read text entered in email and password fields
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+
+  final _emailFocus = FocusNode();
+  final _passFocus = FocusNode();
 
   bool _loading = false;
   String? _error;
@@ -41,10 +46,6 @@ class _LogInPageState extends State<LogInPage>
       }
     }
   }
-
-
-  final _emailFocus = FocusNode();
-  final _passFocus = FocusNode();
 
   bool _obscure = true;
   late AnimationController _controller;
@@ -116,6 +117,7 @@ class _LogInPageState extends State<LogInPage>
                         ),
                       ],
                     ),
+
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -168,6 +170,7 @@ class _LogInPageState extends State<LogInPage>
 
                         const SizedBox(height: 34),
 
+                        // Email field
                         UnderlineField(
                           controller: _emailCtrl,
                           focusNode: _emailFocus,
@@ -179,6 +182,7 @@ class _LogInPageState extends State<LogInPage>
                         ),
                         const SizedBox(height: 22),
 
+                        // Password field
                         UnderlineField(
                           controller: _passCtrl,
                           focusNode: _passFocus,
@@ -203,6 +207,7 @@ class _LogInPageState extends State<LogInPage>
                           const SizedBox(height: 12),
                         ],
 
+                        // Login Button
                         GradientButton(
                           text: _loading ? 'Logging in...' : 'Log In',
                           onPressed: _loading ? null : () =>_signIn(),
@@ -211,6 +216,7 @@ class _LogInPageState extends State<LogInPage>
 
                         const SizedBox(height: 16),
 
+                        // Forget Password Navigation
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -230,6 +236,7 @@ class _LogInPageState extends State<LogInPage>
                           ],
                         ),
 
+                        // Navigate to sign up page
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

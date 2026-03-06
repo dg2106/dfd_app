@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
+// Displays the prediction result
+// Displays disease detected, confidence score and medical explanation
 class ResultPage extends StatelessWidget {
   final String disease;
   final double confidence;
   final Color color;
 
   const ResultPage({
-    super.key,
+    super.key,  
     required this.disease,
     required this.confidence,
     required this.color,
@@ -14,7 +16,7 @@ class ResultPage extends StatelessWidget {
 
   static const darkBlue = Color(0xFF144AB5);
 
-
+  // Converts confidence value into percentage
   double _confidencePercent(double c) {
     if (c <= 1.0) return (c * 100).clamp(0.0, 100.0);
     return c.clamp(0.0, 100.0);
@@ -27,6 +29,7 @@ class ResultPage extends StatelessWidget {
     return Colors.red;
   }
 
+  // Medical severity level
   String _severityLabel(String diseaseName) {
     final d = diseaseName.toLowerCase();
     if (d.contains('healthy')) return 'Low risk';

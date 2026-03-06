@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'result_page.dart';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import '../services/history_service.dart';
 
+// Allows user to capture image using camera
+// Upload picture from gallery
+// Send image to AI model for prediction
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -25,7 +27,7 @@ class _ScanPageState extends State<ScanPage> {
   final picker = ImagePicker();
 
   //Laptop IP
-  static const String apiUrl= 'http://192.168.100.89:8000/predict';
+  static const String apiUrl= 'http://172.20.10.2:8000/predict';
 
   //Pick Image Method
   Future<void> pickImage(ImageSource source) async {
@@ -58,18 +60,21 @@ class _ScanPageState extends State<ScanPage> {
     return _LabelUI(raw, Colors.grey);
   }
 
-
+  // AI prediction logic
+  // Sends image to AI prediction API
   Future<void> _analyzeImage() async {
     if (image == null) return;
 
     setState(() => _isAnalyzing = true);
 
     try {
+      // Create request to API
       final uri = Uri.parse(apiUrl);
-
       final request = http.MultipartRequest('POST', uri);
+
       request.files.add(await http.MultipartFile.fromPath('file', image!.path));
 
+      // Send request to server
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
 
@@ -78,21 +83,23 @@ class _ScanPageState extends State<ScanPage> {
             'Server error ${response.statusCode}: ${response.body}');
       }
 
+      // Parse JSON response from AI model
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       final rawLabel = data['label'].toString();
       final confidence = (data['confidence'] as num?)?.toDouble() ?? 0.0;
 
+      // Convert raw label into UI label
       final mapped = _mapLabelToUI(rawLabel);
 
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
 
-      // Optional safety threshold (recommended)
+      // Minimum Confidence Threshold
       const double threshold = 0.65;
+
       if (confidence < threshold) {
-        Navigator.push(
-          context,
+        Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
             builder: (_) => ResultPage(
               disease: 'Uncertain (Retake photo / Crop closer)',
@@ -104,18 +111,38 @@ class _ScanPageState extends State<ScanPage> {
         return;
       }
 
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("Not logged in");
+      }
 
-      Navigator.push(
-        context,
+      // Navigation first
+      Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              ResultPage(
-                disease: mapped.displayName,
-                confidence: confidence,
-                color: mapped.color,
-              ),
+          builder: (_) => ResultPage(
+            disease: mapped.displayName,
+            confidence: confidence,
+            color: mapped.color,
+          ),
         ),
       );
+
+      // Save history
+       HistoryService.saveScan(
+         uid: user.uid,
+         imageFile: image!,
+         disease: mapped.displayName,
+         confidence: confidence,
+       ).then((_) {
+         debugPrint("History saved successfully");
+       }).catchError((e) {
+         debugPrint("History save failed: $e");
+         ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text("History save failed: $e")),
+         );
+       });
+
     } catch (e){
       if(!mounted) return;
       setState(() => _isAnalyzing = false);
@@ -125,8 +152,6 @@ class _ScanPageState extends State<ScanPage> {
       );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {

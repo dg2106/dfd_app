@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/auth_widgets.dart';
 
+// Sign up page enables user to create an account using Firebase Authentication
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
@@ -11,8 +12,10 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage>
     with SingleTickerProviderStateMixin {
+  // Controllers to get values entered
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+
   final _emailFocus = FocusNode();
   final _passFocus = FocusNode();
 
@@ -164,6 +167,7 @@ class _SignupPageState extends State<SignupPage>
 
                         const SizedBox(height: 34),
 
+                        // Email field
                         UnderlineField(
                           controller: _emailCtrl,
                           focusNode: _emailFocus,
@@ -175,6 +179,7 @@ class _SignupPageState extends State<SignupPage>
                         ),
                         const SizedBox(height: 22),
 
+                        // Password field
                         UnderlineField(
                           controller: _passCtrl,
                           focusNode: _passFocus,
@@ -198,6 +203,7 @@ class _SignupPageState extends State<SignupPage>
                           const SizedBox(height: 12),
                         ],
 
+                        // Sign up button
                         GradientButton(
                           text: _loading ? 'Creating account...' : 'Sign Up',
                           onPressed: _loading ? null : () => _signUp(),

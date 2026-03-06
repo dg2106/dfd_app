@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// Provides a simple rule-based educational chatbot interface
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -46,7 +47,6 @@ class _ChatPageState extends State<ChatPage> {
     _controller.clear();
     _scrollToBottom();
 
-    // Later: replace this with Firebase/Cloud Function call
     final response = await _mockBotReply(text);
 
     if (!mounted) return;
@@ -57,26 +57,155 @@ class _ChatPageState extends State<ChatPage> {
     _scrollToBottom();
   }
 
+  // Chatbot response using keyword-based logic
   Future<String> _mockBotReply(String text) async {
     await Future.delayed(const Duration(milliseconds: 450));
     final lower = text.toLowerCase();
 
-    if (lower.contains('treatment') || lower.contains('cure')) {
-      return 'Seek medical advice from a doctor.';
+    // Greeting
+    if (lower == 'hi' ||
+        lower == 'hello' ||
+        lower.contains('hey')) {
+      return 'Hello! I can give general educational information about diabetic foot problems such as ulcers, blisters, corns, calluses, infection warning signs, and foot care :)';
     }
-    if (lower.contains('ulcer')) {
-      return 'An ulcer is a break in the skin or a deep sore that can be slow to heal.';
+
+    // Thank you
+    if (lower.contains('thank')) {
+      return 'You are welcome! If you have more questions about diabetic foot health, feel free to ask.';
     }
+
+    // What the chatbot does
+    if (lower.contains('what can you do') ||
+        lower.contains('help me') ||
+        lower.contains('what do you know')) {
+      return 'I provide general educational information about diabetic foot care and common foot problems. However, I do not diagnose conditions or give treatment plans.';
+    }
+
+    // Ulcer
+    if (lower.contains('ulcer') ||
+        lower.contains('diabetic foot ulcer')) {
+      return 'A diabetic foot ulcer is an open  sore or wound on the foot that can heal slowly and may become infected. It is usually circular. It should be taken seriously and assessed by a healthcare professional.';
+    }
+
+    // Gangrene
     if (lower.contains('gangrene')) {
-      return 'Gangrene is tissue damage due to poor blood flow or serious infection.';
+      return 'Gangrene means body tissue is dying, often because of poor blood flow or serious infection. You will notice that the color of the skin will darken. It needs urgent medical attention to prevent amputation.';
     }
+
+    // Blister
     if (lower.contains('blister')) {
-      return 'Blisters are small fluid pockets. For diabetics, monitor them carefully.';
+      return 'A blister is a small pocket of fluid under the skin. In a person with diabetes, even a blister should be monitored carefully because it can break down and become infected.';
     }
-    if (lower.contains('corn') || lower.contains('callus')) {
-      return 'Corns and calluses are thickened skin from pressure or friction. In diabetes, they should be monitored carefully.';
+
+    // Corn / callus
+    if (lower.contains('corn') || lower.contains('callus') || lower.contains('calluses')) {
+      return 'Corns and calluses are thickened areas of skin caused by pressure or friction. In diabetes, they should be monitored carefully because thick calluses can break down into ulcers. Do not cut them yourself or use chemical corn removers.';
     }
-    return 'I can provide general educational info only. If you are concerned, please consult a healthcare professional.';
+
+    // Infection / warning signs
+    if (lower.contains('infection') ||
+        lower.contains('infected') ||
+        lower.contains('warning sign') ||
+        lower.contains('danger sign') ||
+        lower.contains('redness') ||
+        lower.contains('swelling') ||
+        lower.contains('pus') ||
+        lower.contains('smell')) {
+      return 'Warning signs include redness, swelling, color change, discharge, bad smell, increasing pain, numbness, or a sore, blister, or ulcer that is not healing. These signs should be assessed by a healthcare professional.';
+    }
+
+    // Other diabetic diseases
+    if (lower.contains('kidney') ||
+        lower.contains('eye') ||
+        lower.contains('retinopathy') ||
+        lower.contains('neuropathy')) {
+      return 'Diabetes can affect many parts of the body such as the eyes, kidneys, nerves, and heart. This assistant mainly provides information about diabetic foot health. For other complications, please consult a healthcare professional.';
+    }
+
+    // Pain / numbness
+    if (lower.contains('pain') ||
+        lower.contains('numb') ||
+        lower.contains('numbness')) {
+      return 'Pain or numbness in the feet can be important warning signs in diabetes. Numbness may make injuries harder to notice, so daily foot checks are important.';
+    }
+
+    // Amputation
+    if (lower.contains('amputation') ||
+        lower.contains('amputate')) {
+      return 'In severe cases, untreated infections or gangrene in the foot may lead to amputation. Early detection and proper foot care can greatly reduce this risk.';
+    }
+
+    // When to see a doctor
+    if (lower.contains('doctor') ||
+        lower.contains('hospital') ||
+        lower.contains('clinic') ||
+        lower.contains('mediclinic') ||
+        lower.contains('when should i see') ||
+        lower.contains('when to seek help')) {
+      return 'You should seek medical help if you notice a wound, sore, blister, or ulcer that is not healing, or if there is swelling, redness, discharge, bad smell, color change, pain, or numbness.';
+    }
+
+    // Foot care / prevention
+    if (lower.contains('prevention') ||
+        lower.contains('prevent') ||
+        lower.contains('foot care') ||
+        lower.contains('care for my feet') ||
+        lower.contains('protect my feet')) {
+      return 'Basic foot care includes checking your feet every day, keeping them clean and dry, wearing well-fitting footwear, avoiding self-cutting corns or calluses, and seeking medical advice early for any sore, blister, or skin change. You can also check the Foot Care Tips.';
+    }
+
+    // Shoes / footwear
+    if (lower.contains('shoe') ||
+        lower.contains('footwear') ||
+        lower.contains('socks')) {
+      return 'Proper footwear is important in diabetes. Shoes should fit well and not rub the skin. Socks and footwear can help reduce pressure and lower the risk of blisters and skin breakdown.';
+    }
+
+    // Cut / wound
+    if (lower.contains('cut') ||
+        lower.contains('wound') ||
+        lower.contains('sore')) {
+      return 'A cut or sore on a diabetic foot should not be ignored. If it does not start healing promptly or looks worse, it should be checked by a healthcare professional.';
+    }
+
+    // Treatment / cure
+    if (lower.contains('treatment') ||
+        lower.contains('cure') ||
+        lower.contains('medicine') ||
+        lower.contains('antibiotic')) {
+      return 'I can only provide general educational information. For treatment decisions, medicines, dressings, or antibiotics, please consult a doctor or podiatry team.';
+    }
+
+    // Other diseases outside scope
+    if (lower.contains('cancer') ||
+        lower.contains('eczema') ||
+        lower.contains('psoriasis') ||
+        lower.contains('fungus') ||
+        lower.contains('heart disease') ||
+        lower.contains('kidney') ||
+        lower.contains('asthma')) {
+      return 'I am designed mainly for educational information about diabetic foot conditions. For other diseases or a diagnosis, please consult a qualified healthcare professional.';
+    }
+
+    // Emergency-seeming phrases
+    if (lower.contains('black') ||
+        lower.contains('turning black') ||
+        lower.contains('severe infection') ||
+        lower.contains('blood') ||
+        lower.contains('flesh') ||
+        lower.contains('bone')) {
+      return 'That may be serious. Please seek urgent medical attention as soon as possible.';
+    }
+
+    // Asking about images
+    if (lower.contains('image') ||
+        lower.contains('picture') ||
+        lower.contains('show me')) {
+      return 'This chat assistant cannot display medical images. However, you can use the Scan feature of the app to analyze a foot image.';
+    }
+
+    // Fallback
+    return 'I can provide general educational information about diabetic foot ulcers, gangrene, blisters, corns, calluses, warning signs, and foot care. I do not diagnose conditions or replace a healthcare professional.';
   }
 
   @override
@@ -88,12 +217,12 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: darkBlue,
         foregroundColor: Colors.white,
         title: const Text(
-          'AI Health Assistant',
+          'Foot Care Assistant',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
 
-      // ✅ Body ONLY has banner + messages
+
       body: Column(
         children: [
           Container(
@@ -127,16 +256,11 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
 
-      // ✅ Input moved here to prevent keyboard overflow
+      // Text input
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 12,
-            right: 12,
-            top: 10,
-            bottom: 10 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: Row(
             children: [
               Expanded(
@@ -167,6 +291,8 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
+
+              // Send Button
               const SizedBox(width: 10),
               SizedBox(
                 height: 46,
@@ -202,7 +328,7 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatMessage {
-  final String role; // 'user' or 'assistant'
+  final String role; // role can be user or assitant
   final String text;
 
   _ChatMessage({required this.role, required this.text});
@@ -261,6 +387,7 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
+// Show sample question as default
 class _EmptyChatHint extends StatelessWidget {
   final void Function(String question) onExampleTap;
 
@@ -277,9 +404,9 @@ class _EmptyChatHint extends StatelessWidget {
       'When should I see a doctor?',
     ];
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(22),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -310,6 +437,7 @@ class _EmptyChatHint extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Wrap(
+              alignment: WrapAlignment.center,
               spacing: 10,
               runSpacing: 10,
               children: examples

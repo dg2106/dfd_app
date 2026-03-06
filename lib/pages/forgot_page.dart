@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/auth_widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Allows user to reset password
+// Send link to email using Firebase Authentication
 class ForgotPage extends StatefulWidget {
   const ForgotPage({super.key});
 
@@ -11,6 +13,7 @@ class ForgotPage extends StatefulWidget {
 
 class _ForgotPageState extends State<ForgotPage>
     with SingleTickerProviderStateMixin {
+  // Controller to read email
   final _emailCtrl = TextEditingController();
   final _emailFocus = FocusNode();
 
@@ -163,6 +166,7 @@ class _ForgotPageState extends State<ForgotPage>
 
                         const SizedBox(height: 28),
 
+                        // Email field
                         UnderlineField(
                           controller: _emailCtrl,
                           focusNode: _emailFocus,

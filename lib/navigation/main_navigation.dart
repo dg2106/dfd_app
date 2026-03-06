@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/pages/chatpage2.dart';
+import '../pages/chatbot_page.dart';
 import '../pages/scan_page.dart';
 import '../pages/history_page.dart';
 import '../pages/footcaretips_page.dart';
 
+// Manage navigation between scan, history, tips and chat
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -12,6 +13,9 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
+
+  // Store index of current tab
+  // Scan page open first
   int _selectedIndex = 0;
   late final PageController _pageController;
 
@@ -45,19 +49,20 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    // Added this part also. can ask chatcha to clean
+    // Hide navigation bar when keyboard is open
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
+
+      // Smooth Navigation between pages
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) => setState(() => _selectedIndex = index),
         children: _pages,
       ),
 
-        // ✅ Hide bottom nav when keyboard is open
-        //Remove if no chat box
+
         bottomNavigationBar: keyboardOpen
           ? const SizedBox.shrink()
           : NavigationBar(
@@ -67,7 +72,7 @@ class _MainNavigationState extends State<MainNavigation> {
             NavigationDestination(icon: Icon(Icons.camera_alt), label: 'Scan'),
             NavigationDestination(icon: Icon(Icons.history), label: 'History'),
             NavigationDestination(icon: Icon(Icons.lightbulb), label: 'Tips'),
-            NavigationDestination(icon: Icon(Icons.chat), label: 'AI Chat'),
+            NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
          ],
         ),
     );
