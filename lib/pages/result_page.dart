@@ -29,7 +29,7 @@ class ResultPage extends StatelessWidget {
     return Colors.red;
   }
 
-  // Medical severity level
+  // Severity level
   String _severityLabel(String diseaseName) {
     final d = diseaseName.toLowerCase();
     if (d.contains('healthy')) return 'Low risk';
@@ -143,7 +143,7 @@ class ResultPage extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // Confidence section with dynamic color progress bar
+            // Confidence section with color progress bar
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -194,25 +194,33 @@ class ResultPage extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // Interactive expandable info
+            // Explanation Container
             Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey[300]!),
               ),
-              child: ExpansionTile(
-                leading: const Icon(Icons.lightbulb_outline, color: darkBlue),
-                title: const Text(
-                  'What this means (tap to expand)',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      _infoText(disease),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                  const Icon(Icons.lightbulb_outline, color: darkBlue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'What does this mean? ',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _infoText(disease),
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                      ],
                     ),
                   ),
                 ],
